@@ -71,6 +71,11 @@ trait HasLoginsAndDevices
      */
     public function hasDevices()
     {
-        return $this->devices()->get()->isNotEmpty();
+        try {
+            return $this->devices()->get()->isNotEmpty();
+        } catch (\BadMethodCallException $ex) {
+            return empty($this->devices()->get());
+        }
+        
     }
 }
