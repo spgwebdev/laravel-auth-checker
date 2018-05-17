@@ -19,7 +19,7 @@ class LockoutAuth
      * @param   Login $login
      * @param   Device $device
      */
-    public function __construct(Login $login, Device $device)
+    public function __construct(Login $login, Device $device = null)
     {
         $this->login = $login;
         $this->device = $device;

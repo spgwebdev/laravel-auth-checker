@@ -47,11 +47,7 @@ class AuthChecker
      */
     public function handleLogin(HasLoginsAndDevicesInterface $user)
     {
-        $device = $this->findOrCreateUserDeviceByAgent($user);
-
-        if ($this->shouldLogDeviceLogin($device)) {
-            $this->createUserLoginForDevice($user, $device);
-        }
+        $this->createUserLoginForDevice($user);
     }
 
     /**
@@ -60,10 +56,9 @@ class AuthChecker
      */
     public function handleFailed(HasLoginsAndDevicesInterface $user)
     {
-        $device = $this->findOrCreateUserDeviceByAgent($user);
-        $this->createUserLoginForDevice($user, $device, Login::TYPE_FAILED);
+        $login = $this->createUserLoginForDevice($user, null, Login::TYPE_FAILED);
 
-        event(new FailedAuth($device->login, $device));
+        event(new FailedAuth($login));
     }
 
     /**
@@ -77,10 +72,10 @@ class AuthChecker
         $user = $this->findUserFromPayload($payload);
 
         if ($user) {
-            $device = $this->findOrCreateUserDeviceByAgent($user);
-            $this->createUserLoginForDevice($user, $device, Login::TYPE_LOCKOUT);
 
-            event(new LockoutAuth($device->login, $device));
+            $login = $this->createUserLoginForDevice($user, null, Login::TYPE_LOCKOUT);
+
+            event(new LockoutAuth($login));
         }
     }
 
@@ -172,7 +167,7 @@ class AuthChecker
      */
     public function createUserLoginForDevice(
         HasLoginsAndDevicesInterface $user,
-        Device $device,
+        Device $device = null,
         $type = Login::TYPE_LOGIN
     ) {
         $ip = $this->request->ip();
@@ -180,11 +175,11 @@ class AuthChecker
         $login = new Login([
             'user_id' => $user->getKey(),
             'ip_address' => $ip,
-            'device_id' => $device->id,
+            'device_id' => $device instanceof Device ? $device->id: null,
             'type' => $type,
         ]);
 
-        $device->login()->save($login);
+        $login->save();
 
         event(new LoginCreated($login));
 
